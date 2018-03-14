@@ -489,7 +489,14 @@ class Lambda(base.BaseResource):
                         if six.PY2:
                             source = source.decode('utf-8', errors='strict')
                             relative_destination = relative_destination.decode('utf-8', errors='strict')
-                        zf.write(source, relative_destination)
+                        try:
+                            zf.write(source, relative_destination)
+                        except ValueError as exc:
+                            if exc.message == 'ZIP does not support timestamps before 1980':
+                                os.utime(source, None)
+                                zf.write(source, relative_destination)
+                            else:
+                                raise exc
 
             tmp.seek(0)
             output = six.BytesIO(tmp.read())
